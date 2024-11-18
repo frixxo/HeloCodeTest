@@ -11,7 +11,8 @@ Tanken är inte att du ska lägga flera dagar på att färdigställa API:et, och
 
 ### 1. Klona projektet
 
-För att komma igång, klona projektets repository med länken vi har skickat till dig:
+För att komma igång, klona projektets repository till din lokala miljö med länken vi har skickat till dig. 
+
 
 ```bash
 git clone https://github.com/HAWCO/be-code-test.git
@@ -87,3 +88,15 @@ För att hålla testet fokuserat och genomförbart på begränsad tid finns det 
 
 
 Vidare är du fri att implementera vad du än vill för att skapa ett så bra API som möjligt. Om du vill lägga till funktionalitet eller extra detaljer som förbättrar API:et är det välkommet, men inte ett krav.
+
+---
+## Inlämning av din lösning
+När du är klar med din lösning, vänligen följ ett av de två alternativen nedan för att skicka in ditt arbete:
+
+**Alternativ 1**: Ladda upp till din egen Git-profil
+Skapa ett nytt repository på din egen Git-profil (GitHub, GitLab, etc.).
+Skicka länken till ditt repository till oss för granskning via mejl.
+
+**Alternativ 2**: Skicka en zip-fil
+Zippa projektmappen med alla dina ändringar.
+Skicka zip-filen till oss via mejl, enligt instruktioner du har fått från oss.
