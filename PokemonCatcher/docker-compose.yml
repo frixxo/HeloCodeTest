@@ -1,10 +1,34 @@
 ﻿services:
-  postgresql_database:
-    image: postgres:14.4
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=pokemon
-      - POSTGRES_PASSWORD=trust
+  pokemoncatcher:
+    build:
+        context: .
+        dockerfile: Dockerfile
     ports:
-      - "5432:5432"
+        - "8080:8080"
+        - "8081:8081"
+    depends_on:
+    - sqlserver
+    environment:
+    - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+    - pokemonnetwork
     restart: unless-stopped
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      SA_PASSWORD: "Trust123"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+        - sqlvolume:/var/opt/mssql
+    networks:
+        - pokemonnetwork
+    restart: unless-stopped
+
+networks:
+  pokemonnetwork:
+  
+volumes:
+  sqlvolume:    
