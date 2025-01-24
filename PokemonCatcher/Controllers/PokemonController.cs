@@ -26,6 +26,7 @@ public sealed class PokemonController : ControllerBase
     /// <returns></returns>
     [HttpPost("catch-pokemon/{nameOrId}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CatchPokemonAsync([FromRoute] String? nameOrId, [FromQuery] int trainerId)
     {
         //CheckpokemonAsync returns null for null ínputs
@@ -162,8 +163,10 @@ public sealed class PokemonController : ControllerBase
     /// Endpoint to retrieve the more info on a pokemon, enter name or id.
     /// </summary>
     /// <returns></returns>
-    [HttpPost("get-pokemon-info/{nameOrId}")]
+    [HttpGet("get-pokemon-info/{nameOrId}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetPokemonInfosAsync([FromRoute] string nameOrId)
     {
         var query = _context.Pokemons.AsQueryable();
@@ -177,7 +180,7 @@ public sealed class PokemonController : ControllerBase
             
         var pokemons = query.ToListAsync();
         if (pokemons.Result.Count == 0) return NotFound("Pokemon not in database");
-        if (pokemons.Result.Count > 1) return BadRequest("Pokemon duplicated, check DB");
+        if (pokemons.Result.Count > 1) return StatusCode(500, "Multiple Pokemons with same name found");
         var pokemon = pokemons.Result[0];
 
         var typeQuery = _context.PokemonTypes.AsQueryable();
@@ -201,6 +204,8 @@ public sealed class PokemonController : ControllerBase
     /// <exception cref="NotImplementedException"></exception>
     [HttpPost("release-pokemon/{trainerId}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ReleasePokemonAsync([FromRoute] int trainerId, [FromQuery] int Id)
     {
        
@@ -231,5 +236,3 @@ public sealed class PokemonController : ControllerBase
     }
 
 }
-
-public class TransferTrainerId { public int trainerId; }
