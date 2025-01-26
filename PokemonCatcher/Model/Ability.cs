@@ -1,4 +1,4 @@
-﻿using PokemonCatcher.Infrastructure.Persistence.Context.DatabaseRepresentations;
+﻿using PokemonCatcher.Infrastructure.Persistence.DatabaseRepresentations;
 
 namespace PokemonCatcher.Model
 {

@@ -1,4 +1,4 @@
-﻿namespace PokemonCatcher.Infrastructure.Persistence.Context.DatabaseRepresentations
+﻿namespace PokemonCatcher.Infrastructure.Persistence.DatabaseRepresentations
 {
     public class CaughtPokemonDB
     {

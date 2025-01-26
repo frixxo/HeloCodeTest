@@ -1,7 +1,7 @@
 using System.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using PokemonCatcher.Infrastructure.Persistence.Context.DatabaseRepresentations;
+using PokemonCatcher.Infrastructure.Persistence.DatabaseRepresentations;
 using PokemonCatcher.Model;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
@@ -85,6 +85,7 @@ public sealed class PokemonController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCaughtPokemonsAsync([FromRoute] int trainerId, [FromQuery] List<string?> Types)
     {
+        
         var query = _context.caughtPokemons.AsQueryable();
         query = query.Where(pokemon => pokemon.TrainerId == trainerId);
 

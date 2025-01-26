@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using Swashbuckle.AspNetCore.Annotations;
 
-namespace PokemonCatcher.Infrastructure.Persistence.Context.DatabaseRepresentations
+namespace PokemonCatcher.Infrastructure.Persistence.DatabaseRepresentations
 {
     public class AbilityDB
     {

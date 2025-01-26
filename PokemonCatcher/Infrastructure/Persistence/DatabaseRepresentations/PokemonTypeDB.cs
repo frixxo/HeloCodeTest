@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using PokemonCatcher.Model;
 
-namespace PokemonCatcher.Infrastructure.Persistence.Context.DatabaseRepresentations
+namespace PokemonCatcher.Infrastructure.Persistence.DatabaseRepresentations
 {
     public class PokemonTypeDB
     {
