@@ -1,5 +1,9 @@
+using System.Collections;
 using System.Configuration;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
 using PokemonCatcher.Infrastructure.Persistence.DatabaseRepresentations;
 using PokemonCatcher.Model;
@@ -10,6 +14,12 @@ namespace PokemonCatcher.Controllers;
 [Route("api/v1/pokemons")]
 public sealed class PokemonController : ControllerBase
 {
+    private static string[] validPokemonTypes = new string[]
+{
+    "normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost",
+    "steel", "fire", "water", "grass", "electric", "psychic", "ice", "dragon",
+    "dark", "fairy", "stellar"
+};
     private readonly ApplicationDbContext _context;
     private readonly PokeDexApiContext _pokeDexContext;
     public PokemonController(ApplicationDbContext context,PokeDexApiContext pokedexContext)
@@ -83,6 +93,7 @@ public sealed class PokemonController : ControllerBase
     /// <returns></returns>
     [HttpGet("get-caught-pokemons/{trainerId}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetCaughtPokemonsAsync([FromRoute] int trainerId, [FromQuery] List<string?> Types)
     {
         
@@ -91,6 +102,9 @@ public sealed class PokemonController : ControllerBase
 
         if (!Types.IsNullOrEmpty())
         {
+            Types.ForEach(t => t.ToLower());
+            var faults = getFaultyTypes(Types);
+            if (!faults.IsNullOrEmpty()) return BadRequest(generateInvalidTypeMessage(faults));
             query = query.Where(pokemon => _context.PokemonTypes
                 .Where(type => type.PokemonId == pokemon.Id)
                 .Select(type => type.TypeName)
@@ -103,6 +117,28 @@ public sealed class PokemonController : ControllerBase
         return (Ok(CaughtPokemon));
     }
 
+    private string generateInvalidTypeMessage(List<string> faults)
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach(string fault in faults)
+        {
+            sb.Append(fault + ", ");
+        }
+        if (faults.Count == 1) sb.Append("is not a valid pokemon type.");
+        else sb.Append("is not valid pokemon types.");
+
+        return sb.ToString();
+    }
+
+    private List<string> getFaultyTypes(List<string?> types) {
+        List<string> faults = new List<string>();
+        foreach(string type in types)
+        {
+            if (!validPokemonTypes.Contains(type)) faults.Add(type);
+        }
+        return faults;
+    }
+
     /// <summary>
     /// Endpoint to retrieve all Pokémons in database
     /// </summary>
@@ -110,12 +146,16 @@ public sealed class PokemonController : ControllerBase
     /// <returns></returns>
     [HttpGet("get-all-pokemons")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetPokemonsAsync([FromQuery] List<string?> Types)
     {
         var query = _context.Pokemons.AsQueryable();
 
         if (!Types.IsNullOrEmpty())
         {
+            Types.ForEach(t => t.ToLower());
+            var faults = getFaultyTypes(Types);
+            if (!faults.IsNullOrEmpty()) return BadRequest(generateInvalidTypeMessage(faults));
             query = query.Where(pokemon => _context.PokemonTypes
                 .Where(type => type.PokemonId == pokemon.Id)
                 .Select(type => type.TypeName)
@@ -140,6 +180,17 @@ public sealed class PokemonController : ControllerBase
 
         // Return an OK response with the list of Pokémons
         return (Ok(trainers));
+    }
+
+    /// <summary>
+    /// Endpoint to retrieve all Pokémon types
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet("get-types")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> getTypes()
+    {
+        return Ok(validPokemonTypes);
     }
 
     /// <summary>
