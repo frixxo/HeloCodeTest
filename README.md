@@ -2,7 +2,7 @@
 
 # Kodtest - .NET - Joel Olausson
 
-Projektet är uppsatt så att allt ska köras med api på [port localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html) när man kör docker compose. Men säkerställ att DefaultConnection för docker används i appsettings.Development.json
+Projektet är uppsatt så att allt ska köras med api på [port localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html) när man kör docker compose. 
 ```bash
 docker compose up --build
 ```
