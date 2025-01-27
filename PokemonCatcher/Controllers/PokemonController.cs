@@ -27,10 +27,11 @@ public sealed class PokemonController : ControllerBase
         _context = context;
         _pokeDexContext = pokedexContext;
     }
+
     /// <summary>
     /// Endpoint to insert new Pokémon trainer into database
     /// </summary>
-    /// <param name="trainer">The name of the Pokémon Trainer.</param>
+    /// <param name="trainer">The pokemon trainer object.</param>
     /// <returns></returns>
     [HttpPut("trainers/create-new-trainer")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -44,7 +45,7 @@ public sealed class PokemonController : ControllerBase
     }
 
     /// <summary>
-    /// Endpoint used to catch a Pokémon, only needs one of name or PokeDexId.
+    /// Endpoint used to catch a Pokémon.
     /// </summary>
     /// <param name="TrainerId">The id of the Pokémon trainer.</param>
     /// <param name="nameOrId">The name or id of the pokeDexId of the pokemon to catch.</param>
@@ -102,7 +103,7 @@ public sealed class PokemonController : ControllerBase
     /// <summary>
     /// Endpoint used to release a catched Pokémon
     /// </summary>
-    /// <param id="PokemonId">The id of the specific caught Pokémon instance to release.</param>
+    /// <param id="PokemonId">The Id of the specific caught Pokémon instance to release.</param>
     /// <param id="transferTrainerId">The id of the owner of the pokemon.</param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
@@ -110,11 +111,10 @@ public sealed class PokemonController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ReleasePokemonAsync([FromRoute] int trainerId, [FromQuery] int Id)
+    public async Task<IActionResult> ReleasePokemonAsync([FromRoute] int trainerId, [FromQuery] int PokemonId)
     {
-
         var query = _context.caughtPokemons.AsQueryable();
-        query = query.Where(pokemon => pokemon.Id == Id);
+        query = query.Where(pokemon => pokemon.Id == PokemonId);
         var ps = await query.ToListAsync();
         if (ps.Count == 0) return NotFound("Pokemon instance not found");
         var p = ps[0];
@@ -160,38 +160,46 @@ public sealed class PokemonController : ControllerBase
             Types.ForEach(t => t.ToLower());
             var faults = getFaultyTypes(Types);
             if (!faults.IsNullOrEmpty()) return BadRequest(generateInvalidTypeMessage(faults));
+
             query = query.Where(pokemon => _context.PokemonTypes
-                .Where(type => type.PokemonId == pokemon.Id)
+                .Where(type => type.PokemonId == pokemon.PokemonId)
                 .Select(type => type.TypeName)
                 .Any(typeName => Types.Contains(typeName)));
         }
 
         var CaughtPokemon = await query.ToListAsync();
         
-        // Return an OK response with the list of Pokémons
         return (Ok(CaughtPokemon));
     }
 
-    private string generateInvalidTypeMessage(List<string> faults)
+    /// <summary>
+    /// Endpoint to retrieve all caught Pokémons.
+    /// </summary>
+    /// <param name="Types">Types of pokemon to filter on (Optional).</param>
+    /// <returns></returns>
+    [HttpGet("get-all-caught-pokemons")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetCaughtPokemonsAsync([FromQuery] List<string?> Types)
     {
-        StringBuilder sb = new StringBuilder();
-        foreach(string fault in faults)
-        {
-            sb.Append(fault + ", ");
-        }
-        if (faults.Count == 1) sb.Append("is not a valid pokemon type.");
-        else sb.Append("is not valid pokemon types.");
 
-        return sb.ToString();
-    }
+        var query = _context.caughtPokemons.AsQueryable();
 
-    private List<string> getFaultyTypes(List<string?> types) {
-        List<string> faults = new List<string>();
-        foreach(string type in types)
+        if (!Types.IsNullOrEmpty())
         {
-            if (!validPokemonTypes.Contains(type)) faults.Add(type);
+            Types.ForEach(t => t.ToLower());
+            var faults = getFaultyTypes(Types);
+            if (!faults.IsNullOrEmpty()) return BadRequest(generateInvalidTypeMessage(faults));
+
+            query = query.Where(pokemon => _context.PokemonTypes
+                .Where(type => type.PokemonId == pokemon.PokemonId)
+                .Select(type => type.TypeName)
+                .Any(typeName => Types.Contains(typeName)));
         }
-        return faults;
+
+        var CaughtPokemon = await query.ToListAsync();
+
+        return (Ok(CaughtPokemon));
     }
 
     /// <summary>
@@ -211,6 +219,7 @@ public sealed class PokemonController : ControllerBase
             Types.ForEach(t => t.ToLower());
             var faults = getFaultyTypes(Types);
             if (!faults.IsNullOrEmpty()) return BadRequest(generateInvalidTypeMessage(faults));
+
             query = query.Where(pokemon => _context.PokemonTypes
                 .Where(type => type.PokemonId == pokemon.Id)
                 .Select(type => type.TypeName)
@@ -222,6 +231,28 @@ public sealed class PokemonController : ControllerBase
         return (Ok(pokemon));
     }
 
+    private string generateInvalidTypeMessage(List<string> faults)
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (string fault in faults)
+        {
+            sb.Append(fault + ", ");
+        }
+        if (faults.Count == 1) sb.Append("is not a valid pokemon type.");
+        else sb.Append("is not valid pokemon types.");
+
+        return sb.ToString();
+    }
+
+    private List<string> getFaultyTypes(List<string?> types)
+    {
+        List<string> faults = new List<string>();
+        foreach (string type in types)
+        {
+            if (!validPokemonTypes.Contains(type)) faults.Add(type);
+        }
+        return faults;
+    }
 
     /// <summary>
     /// Endpoint to retrieve all Pokémon trainers in database
