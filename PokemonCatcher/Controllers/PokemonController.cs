@@ -27,6 +27,21 @@ public sealed class PokemonController : ControllerBase
         _context = context;
         _pokeDexContext = pokedexContext;
     }
+    /// <summary>
+    /// Endpoint to insert new Pokémon trainer into database
+    /// </summary>
+    /// <param name="trainer">The name of the Pokémon Trainer.</param>
+    /// <returns></returns>
+    [HttpPut("trainers/create-new-trainer")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> CreateTrainerAsync([FromBody] PokemonTrainerDB trainer)
+    {
+        _context.PokemonTrainers.Add(trainer);
+
+        await _context.SaveChangesAsync();
+
+        return (Ok("trainer added with Id: " + trainer.Id));
+    }
 
     /// <summary>
     /// Endpoint used to catch a Pokémon, only needs one of name or PokeDexId.
@@ -84,9 +99,49 @@ public sealed class PokemonController : ControllerBase
         return (Ok($"Caught Pokémon: {p.Name}"));
     }
 
+    /// <summary>
+    /// Endpoint used to release a catched Pokémon
+    /// </summary>
+    /// <param id="PokemonId">The id of the specific caught Pokémon instance to release.</param>
+    /// <param id="transferTrainerId">The id of the owner of the pokemon.</param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    [HttpPost("release-pokemon/{trainerId}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReleasePokemonAsync([FromRoute] int trainerId, [FromQuery] int Id)
+    {
+
+        var query = _context.caughtPokemons.AsQueryable();
+        query = query.Where(pokemon => pokemon.Id == Id);
+        var ps = await query.ToListAsync();
+        if (ps.Count == 0) return NotFound("Pokemon instance not found");
+        var p = ps[0];
+
+        var query2 = _context.Pokemons.AsQueryable();
+        query2 = query2.Where(pokemon => pokemon.Id == p.PokemonId);
+        var ps2 = await query2.ToListAsync();
+        if (ps2.Count == 0) return NotFound("Pokemon species not found");
+        var p2 = ps2[0];
+
+        if (p.TrainerId != trainerId) return Unauthorized("pokemon not owned by that trainer");
+
+        var trainerQuery = _context.PokemonTrainers.AsQueryable();
+        trainerQuery = trainerQuery.Where(trainer => trainer.Id == trainerId);
+        var ts = await trainerQuery.ToListAsync();
+        if (ts.Count == 0) return NotFound("Trainer not found");
+        var trainer = ts[0];
+
+        _context.caughtPokemons.Remove(p);
+        await _context.SaveChangesAsync();
+
+        return Ok($"Released Pokémon of species {p2.Name} owned by {trainer.Name}");
+    }
+
 
     /// <summary>
-    /// Endpoint to retrieve the caught Pokémons
+    /// Endpoint to retrieve the caught Pokémons for a trainer.
     /// </summary>
     /// <param name="Types">Types of pokemon to filter on (Optional).</param>
     /// <param name="trainerId">The trainer Id whose pokemon we want to se.</param>
@@ -172,7 +227,7 @@ public sealed class PokemonController : ControllerBase
     /// Endpoint to retrieve all Pokémon trainers in database
     /// </summary>
     /// <returns></returns>
-    [HttpGet("get-all-trainers")]
+    [HttpGet("trainers/get-all-trainers")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTrainersAsync()
     {
@@ -188,28 +243,12 @@ public sealed class PokemonController : ControllerBase
     /// <returns></returns>
     [HttpGet("get-types")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> getTypes()
+    public string[] getTypes()
     {
-        return Ok(validPokemonTypes);
+        return validPokemonTypes;
     }
 
-    /// <summary>
-    /// Endpoint to insert new Pokémon trainer into database
-    /// </summary>
-    /// <param name="trainer">The name of the Pokémon Trainer.</param>
-    /// <returns></returns>
-    [HttpPut("create-new-trainer")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetTrainersAsync([FromBody] PokemonTrainerDB trainer)
-    {
-        //var trainer = new PokemonTrainerDB { Level = level, Name = name };
-        _context.PokemonTrainers.Add(trainer);
-
-        await _context.SaveChangesAsync();
-
-        // Return an OK response with the list of Pokémons
-        return (Ok("trainer added with Id: "+trainer.Id));
-    }
+    
 
     /// <summary>
     /// Endpoint to retrieve the more info on a pokemon, enter name or id.
@@ -246,45 +285,4 @@ public sealed class PokemonController : ControllerBase
         // Return an OK response with the list of Pokémons
         return Ok(new Pokemon(pokemon, types, abilities));
     }
-
-    /// <summary>
-    /// Endpoint used to release a catched Pokémon
-    /// </summary>
-    /// <param id="PokemonId">The id of the specific caught Pokémon instance to release.</param>
-    /// <param id="transferTrainerId">The id of the owner of the pokemon.</param>
-    /// <returns></returns>
-    /// <exception cref="NotImplementedException"></exception>
-    [HttpPost("release-pokemon/{trainerId}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ReleasePokemonAsync([FromRoute] int trainerId, [FromQuery] int Id)
-    {
-       
-        var query = _context.caughtPokemons.AsQueryable();
-        query = query.Where(pokemon => pokemon.Id == Id);
-        var ps = await query.ToListAsync();
-        if (ps.Count == 0) return NotFound("Pokemon instance not found");
-        var p = ps[0];
-        
-        var query2 = _context.Pokemons.AsQueryable();
-        query2 = query2.Where(pokemon => pokemon.Id == p.PokemonId);
-        var ps2 = await query2.ToListAsync();
-        if (ps2.Count == 0) return NotFound("Pokemon species not found");
-        var p2 = ps2[0];
-
-        if (p.TrainerId != trainerId) return Unauthorized("pokemon not owned by that trainer");
-
-        var trainerQuery = _context.PokemonTrainers.AsQueryable();
-        trainerQuery = trainerQuery.Where(trainer => trainer.Id == trainerId);
-        var ts = await trainerQuery.ToListAsync();
-        if (ts.Count == 0) return NotFound("Trainer not found");
-        var trainer = ts[0];
-
-        _context.caughtPokemons.Remove(p);
-        await _context.SaveChangesAsync();
-
-        return Ok($"Released Pokémon of species {p2.Name} owned by {trainer.Name}");
-    }
-
 }
